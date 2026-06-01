@@ -1,0 +1,6 @@
+# ConnectLAW – Abhängigkeiten
+# Anthropic Python SDK (Messages API). Aktuelle Version verwenden, da
+# adaptives Thinking, output_config/effort und der web_search-Servertool
+# erst in neueren Releases verfügbar sind.
+anthropic>=0.69.0
+python-dotenv>=1.0.1

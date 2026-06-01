@@ -1,0 +1,21 @@
+# Geheimnisse / lokale Konfiguration
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Interne Wissensdokumente NICHT versionieren ([DOK] sind vertraulich).
+# Ablage erfolgt lokal im Ordner knowledge/.
+knowledge/*
+!knowledge/.gitkeep
+!knowledge/README.md
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
