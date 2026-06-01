@@ -64,6 +64,21 @@ cp .env.example .env          # ANTHROPIC_API_KEY eintragen
 Das Skript startet das Backend und gibt eine `https://….trycloudflare.com`-URL
 aus – diese in der Chat-Seite unter **⚙ Backend** eintragen (ohne `/` am Ende).
 
+### Windows (PowerShell)
+
+```powershell
+# einmalig: Python + cloudflared installieren
+winget install --id Python.Python.3.12
+winget install --id Cloudflare.cloudflared
+
+# im Projektordner:
+pip install -r requirements-server.txt
+copy .env.example .env        # .env oeffnen, ANTHROPIC_API_KEY eintragen
+powershell -ExecutionPolicy Bypass -File .\tunnel.ps1
+```
+
+Die ausgegebene `https://….trycloudflare.com`-URL in ⚙ Backend eintragen.
+
 Manuell (zwei Terminals) geht es auch:
 ```bash
 # Terminal 1
