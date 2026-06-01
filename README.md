@@ -47,6 +47,32 @@ Frage› Wir haben bei Tiefbauarbeiten eine fremde Werkleitung beschädigt.
 ConnectLAW› [Analyse nach Schema Sachverhalt → Norm/Prinzip → ...]
 ```
 
+## Web-Frontend (GitHub Pages) + Backend
+
+Neben der CLI gibt es eine Web-Oberfläche im Ordner `docs/` (von GitHub Pages
+ausgeliefert) plus ein HTTP-Backend (`server.py`).
+
+```
+Browser (docs/, GitHub Pages)  ──HTTP──▶  server.py (FastAPI)  ──▶  LegalAgent
+   nur UI, KEIN API-Schlüssel              hält ANTHROPIC_API_KEY
+```
+
+**Sicherheit:** GitHub Pages ist Static-Hosting – der API-Schlüssel bleibt
+ausschliesslich im Backend, nie im Frontend.
+
+```bash
+# Backend starten
+pip install -r requirements-server.txt
+export ANTHROPIC_API_KEY=sk-ant-...
+export CONNECTLAW_CORS_ORIGINS="https://<user>.github.io"   # nur Pages-Domain
+uvicorn server:app --host 0.0.0.0 --port 8000
+```
+
+GitHub Pages: Repo → Settings → Pages → Source = Branch, Ordner `/docs`.
+Danach auf der Seite **⚙ Backend** die Backend-URL eintragen. Details:
+`docs/README.md`. Lokaler Test: Backend auf `:8000`, `cd docs && python -m
+http.server 8080`.
+
 ## Konfiguration (Umgebungsvariablen / `.env`)
 
 | Variable | Standard | Bedeutung |
@@ -62,9 +88,13 @@ ConnectLAW› [Analyse nach Schema Sachverhalt → Norm/Prinzip → ...]
 
 ```
 ConnectLAW/
-├── main.py                     # Einstiegspunkt
+├── main.py                     # CLI-Einstiegspunkt
+├── server.py                   # FastAPI-Backend (/chat, /reset, /health)
 ├── prompts/system_prompt.md    # Fach-Prompt v4.0
 ├── knowledge/                  # [DOK]-Wissensquellen (lokal, nicht versioniert)
+├── docs/                       # GitHub-Pages-Frontend (Chat-Web-UI)
+│   ├── index.html
+│   └── assets/{css,js}
 └── connectlaw/
     ├── config.py               # Konfiguration + zugelassene CH-Domains
     ├── knowledge.py            # System-Prompt-/Wissens-Laden

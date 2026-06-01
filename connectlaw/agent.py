@@ -33,6 +33,8 @@ class LegalAgent:
         self.tools = self._build_tools()
         # Gesprächsverlauf (stateless API → vollständige Historie pro Aufruf).
         self.messages: list[dict] = []
+        # Letzte finale Message (für Diagnose/usage).
+        self.last_message: anthropic.types.Message | None = None
 
     # ------------------------------------------------------------------ #
     # Aufbau von System-Präfix und Tools
@@ -70,15 +72,14 @@ class LegalAgent:
     # ------------------------------------------------------------------ #
     # Eine Frage stellen (streamt die Antwort nach stdout)
     # ------------------------------------------------------------------ #
-    def ask(self, user_input: str, on_text=print) -> anthropic.types.Message:
-        """Sendet eine Nutzerfrage, streamt die Antwort und pflegt den Verlauf.
+    def iter_answer(self, user_input: str):
+        """Sendet eine Nutzerfrage und liefert Text-Deltas als Generator.
 
-        on_text: Callback für Text-Deltas (Standard: print, flush).
-        Rückgabe: die finale Message (für Diagnose/usage).
+        Pflegt den Verlauf und löst pause_turn (server-seitige Websuche) auf.
+        Die finale Message wird unter self.last_message abgelegt.
         """
         self.messages.append({"role": "user", "content": user_input})
 
-        final = None
         while True:  # Auflösung von pause_turn bei server-seitiger Websuche
             with self.client.messages.stream(
                 model=self.config.model,
@@ -90,11 +91,12 @@ class LegalAgent:
                 messages=self.messages,
             ) as stream:
                 for text in stream.text_stream:
-                    on_text(text)
+                    yield text
                 final = stream.get_final_message()
 
             # Vollständigen Content (inkl. server_tool_use/thinking) anhängen.
             self.messages.append({"role": "assistant", "content": final.content})
+            self.last_message = final
 
             if final.stop_reason == "pause_turn":
                 # Server-seitige Such-Schleife hat das Iterationslimit erreicht;
@@ -102,4 +104,12 @@ class LegalAgent:
                 continue
             break
 
-        return final
+    def ask(self, user_input: str, on_text=print) -> "anthropic.types.Message | None":
+        """Sendet eine Nutzerfrage, streamt die Antwort und pflegt den Verlauf.
+
+        on_text: Callback für Text-Deltas (Standard: print, flush).
+        Rückgabe: die finale Message (für Diagnose/usage).
+        """
+        for text in self.iter_answer(user_input):
+            on_text(text)
+        return self.last_message

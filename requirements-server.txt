@@ -1,0 +1,5 @@
+# ConnectLAW – Backend (HTTP-Endpoint für das Web-Frontend)
+# Enthält die Kern-Abhängigkeiten plus den Webserver.
+-r requirements.txt
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0

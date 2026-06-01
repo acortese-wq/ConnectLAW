@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ConnectLAW · Juristischer Fach-Chatbot v4.0</title>
+  <meta name="description" content="Interner juristischer Analyse-Assistent – Netzbau, Werkleitungen, Gestattungen, Tiefbau, Schadenregulierung (Schweizer Recht)." />
+  <link rel="stylesheet" href="assets/css/chat.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">§</span>
+      <div>
+        <h1>ConnectLAW</h1>
+        <p class="subtitle">Juristischer Fach-Chatbot v4.0 · INTERN</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="reset-btn" class="btn ghost" title="Verlauf löschen">Neuer Fall</button>
+      <button id="settings-btn" class="btn ghost" title="Einstellungen">⚙ Backend</button>
+    </div>
+  </header>
+
+  <section id="settings" class="settings hidden">
+    <label>
+      Backend-URL
+      <input id="backend-url" type="url" placeholder="https://dein-backend.example/" autocomplete="off" />
+    </label>
+    <label>
+      Detailgrad
+      <select id="effort-hint" title="Hinweis: serverseitig konfiguriert (CONNECTLAW_EFFORT)">
+        <option value="">Server-Standard</option>
+      </select>
+    </label>
+    <p class="settings-note">
+      Der API-Schlüssel liegt ausschliesslich im Backend. Starte das Backend
+      (<code>uvicorn server:app</code>) und trage hier dessen URL ein. Status:
+      <span id="health" class="health">unbekannt</span>
+    </p>
+  </section>
+
+  <main id="chat" class="chat" aria-live="polite"></main>
+
+  <form id="composer" class="composer" autocomplete="off">
+    <textarea id="input" rows="1" placeholder="Sachverhalt schildern oder Rechtsfrage stellen … (Enter = senden, Shift+Enter = neue Zeile)"></textarea>
+    <button id="send-btn" class="btn primary" type="submit">Senden</button>
+  </form>
+
+  <footer class="disclaimer">
+    ⚠ KI-gestützte Erstorientierung. Ersetzt keine verbindliche Rechtsberatung.
+    [MOD]-Aussagen sind zu verifizieren. Bei Risiko → Rechtsdienst.
+  </footer>
+
+  <script src="assets/js/chat.js"></script>
+</body>
+</html>
