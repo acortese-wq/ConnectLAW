@@ -34,7 +34,20 @@ config = Config()
 config.validate()
 
 _system_prompt = load_system_prompt(SYSTEM_PROMPT_PATH)
-_knowledge_text, KNOWLEDGE_FILES = load_knowledge(KNOWLEDGE_DIR)
+
+# Wissensquellen ([DOK]) – zur Laufzeit nachladbar (siehe /reload).
+_state: dict = {"knowledge_text": "", "knowledge_files": []}
+
+
+def _load_knowledge_state() -> list[str]:
+    """Liest knowledge/ neu ein und legt Text + Dateiliste im State ab."""
+    text, files = load_knowledge(KNOWLEDGE_DIR)
+    _state["knowledge_text"] = text
+    _state["knowledge_files"] = files
+    return files
+
+
+_load_knowledge_state()
 
 # Einfacher In-Memory-Sitzungsspeicher: session_id -> LegalAgent
 _sessions: dict[str, LegalAgent] = {}
@@ -54,7 +67,7 @@ app.add_middleware(
 def _get_agent(session_id: str) -> LegalAgent:
     agent = _sessions.get(session_id)
     if agent is None:
-        agent = LegalAgent(config, _system_prompt, _knowledge_text)
+        agent = LegalAgent(config, _system_prompt, _state["knowledge_text"])
         _sessions[session_id] = agent
     return agent
 
@@ -81,7 +94,7 @@ def health() -> dict:
         "model": config.model,
         "effort": config.effort,
         "web_search": config.web_search,
-        "knowledge_files": KNOWLEDGE_FILES,
+        "knowledge_files": _state["knowledge_files"],
         "active_sessions": len(_sessions),
     }
 
@@ -108,3 +121,15 @@ def reset(req: ResetRequest) -> dict:
     if agent is not None:
         agent.reset()
     return {"status": "reset", "session_id": req.session_id}
+
+
+@app.post("/reload")
+def reload_knowledge() -> dict:
+    """Liest den Ordner knowledge/ neu ein, ohne das Backend neu zu starten.
+
+    Nach dem Ablegen/Ändern von Dokumenten aufrufen. Bestehende Sitzungen
+    werden verworfen, damit neue Sitzungen die aktualisierten [DOK] nutzen.
+    """
+    files = _load_knowledge_state()
+    _sessions.clear()
+    return {"status": "reloaded", "knowledge_files": files, "count": len(files)}
