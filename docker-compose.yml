@@ -1,0 +1,44 @@
+# ConnectLAW – Backend + Caddy (automatisches HTTPS)
+#
+# Voraussetzungen:
+#   - Eine Domain, deren DNS-A-/AAAA-Record auf diesen Server zeigt.
+#   - Ports 80 und 443 am Server offen (Caddy holt das TLS-Zertifikat
+#     automatisch via Let's Encrypt).
+#   - .env mit ANTHROPIC_API_KEY und DOMAIN (siehe .env.example).
+#
+# Start:  docker compose up -d --build
+
+services:
+  backend:
+    build: .
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY fehlt in .env}
+      CONNECTLAW_CORS_ORIGINS: ${CONNECTLAW_CORS_ORIGINS:-https://acortese-wq.github.io}
+      CONNECTLAW_MODEL: ${CONNECTLAW_MODEL:-claude-opus-4-8}
+      CONNECTLAW_EFFORT: ${CONNECTLAW_EFFORT:-high}
+      CONNECTLAW_WEB_SEARCH: ${CONNECTLAW_WEB_SEARCH:-true}
+    # Daten bleiben lokal auf dem Host, schreibgeschützt eingebunden:
+    volumes:
+      - ./knowledge:/app/knowledge:ro
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN fehlt in .env (z.B. connectlaw.example.com)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

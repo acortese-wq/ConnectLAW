@@ -1,0 +1,6 @@
+# Automatisches HTTPS für die ConnectLAW-Domain.
+# Caddy beschafft & erneuert das TLS-Zertifikat selbstständig (Let's Encrypt).
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy backend:8000
+}

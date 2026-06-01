@@ -69,10 +69,15 @@ export CONNECTLAW_CORS_ORIGINS="https://<user>.github.io"   # nur Pages-Domain
 uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 
-GitHub Pages: Repo → Settings → Pages → Source = Branch, Ordner `/docs`.
-Danach auf der Seite **⚙ Backend** die Backend-URL eintragen. Details:
-`docs/README.md`. Lokaler Test: Backend auf `:8000`, `cd docs && python -m
-http.server 8080`.
+GitHub Pages: Repo → Settings → Pages → Source = **GitHub Actions** (deployt
+`docs/` über den Workflow `.github/workflows/pages.yml`). Danach auf der Seite
+**⚙ Backend** die Backend-URL eintragen. Details: `docs/README.md`.
+
+**Wichtig (HTTPS):** Die Pages-Seite läuft über HTTPS und kann kein
+`http://`-Backend aufrufen (Mixed Content). Für den Dauerbetrieb das Backend
+mit automatischem HTTPS betreiben → siehe **`DEPLOY.md`** (Docker Compose +
+Caddy). Lokaler Test ohne HTTPS: Frontend lokal öffnen
+(`cd docs && python -m http.server 8080`) und Backend `http://localhost:8000`.
 
 ## Konfiguration (Umgebungsvariablen / `.env`)
 

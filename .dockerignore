@@ -1,0 +1,13 @@
+.git
+.github
+docs
+__pycache__
+**/__pycache__
+*.pyc
+.venv
+venv
+.env
+.env.*
+# Wissensdokumente nie ins Image backen – werden als Volume gemountet
+knowledge/*
+!knowledge/.gitkeep
