@@ -49,14 +49,31 @@ Der Status muss „verbunden" zeigen.
 - Der API-Schlüssel liegt nur im Backend-Container (`.env`), nie im Frontend.
 - `.env` ist in `.gitignore` – nicht committen.
 
-## Ohne eigene Domain (nur Test)
+## Ohne eigene Domain (Tunnel) – empfohlen zum Loslegen
 
-Wenn (noch) keine Domain verfügbar ist, das Backend lokal starten und einen
-HTTPS-Tunnel verwenden:
+Kein Server, keine Domain nötig. Backend + HTTPS-Tunnel mit einem Skript:
 
 ```bash
-uvicorn server:app --host 0.0.0.0 --port 8000
-cloudflared tunnel --url http://localhost:8000   # liefert eine https-URL
+pip install -r requirements-server.txt
+cp .env.example .env          # ANTHROPIC_API_KEY eintragen
+./tunnel.sh
 ```
-Die ausgegebene `https://…`-URL in ⚙ Backend eintragen. (Mixed-Content:
-eine HTTPS-Seite kann kein `http://`-Backend aufrufen.)
+
+`cloudflared` muss installiert sein
+(https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/).
+Das Skript startet das Backend und gibt eine `https://….trycloudflare.com`-URL
+aus – diese in der Chat-Seite unter **⚙ Backend** eintragen (ohne `/` am Ende).
+
+Manuell (zwei Terminals) geht es auch:
+```bash
+# Terminal 1
+export ANTHROPIC_API_KEY=sk-ant-...
+export CONNECTLAW_CORS_ORIGINS="https://acortese-wq.github.io"
+uvicorn server:app --host 127.0.0.1 --port 8000
+# Terminal 2
+cloudflared tunnel --url http://localhost:8000
+```
+
+Hinweis: Die Quick-Tunnel-URL ändert sich bei jedem Neustart – einfach die
+neue URL in ⚙ Backend eintragen. (Mixed-Content: eine HTTPS-Seite kann kein
+`http://`-Backend aufrufen, deshalb der Tunnel.)
