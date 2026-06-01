@@ -3,3 +3,5 @@
 -r requirements.txt
 fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
+# PDF-Textextraktion für [DOK]-Wissensquellen
+pypdf>=4.0.0

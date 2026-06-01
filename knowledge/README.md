@@ -6,12 +6,15 @@ System-Prompt Vorrang vor Live-Recherche `[WEB]` und Modellwissen `[MOD]`.
 
 ## Hinweise
 
-- Nur **textbasierte** Dateien werden automatisch eingelesen
-  (`.md`, `.txt`, `.markdown`, `.rst`). `README.md` wird ignoriert.
+- Eingelesen werden **Text** (`.md`, `.txt`, `.markdown`, `.rst`) und
+  **PDF** (`.pdf`). `README.md` wird ignoriert.
+- **PDF** benötigt `pypdf` (in `requirements-server.txt` enthalten). Fehlt
+  es, werden PDFs übersprungen. Reine **Scan-PDFs ohne Textebene** liefern
+  keinen Text – vorab per OCR in durchsuchbares PDF/Text umwandeln.
 - Inhalte sind **vertraulich** und werden **nicht** ins Git-Repository
-  übernommen (siehe `.gitignore`). Ablage erfolgt lokal.
-- Für PDF-Dokumente: Text extrahieren und als `.txt`/`.md` ablegen, oder
-  die App um die Files API erweitern (siehe README → Erweiterungen).
+  übernommen (siehe `.gitignore`). Ablage erfolgt lokal beim Backend.
+- Nach dem Ablegen/Ändern von Dateien das Backend neu starten **oder**
+  `curl -X POST http://localhost:8000/reload` aufrufen.
 
 ## Beispiel
 

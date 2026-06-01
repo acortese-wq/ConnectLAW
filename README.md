@@ -14,8 +14,9 @@ Recht). Lauffähige Python-CLI auf Basis des **Anthropic Python SDK**
 - **System-Prompt-Laden** – der Fach-Prompt v4.0 (Halluzinationsverbot,
   Eskalationsregeln, Mandatsgrenze, Selbstcheck) liegt in
   `prompts/system_prompt.md`.
-- **Wissensquellen `[DOK]`** – Textdokumente in `knowledge/` werden in
-  den gecachten Kontext geladen und haben Vorrang vor `[WEB]`/`[MOD]`.
+- **Wissensquellen `[DOK]`** – Text- und PDF-Dokumente in `knowledge/`
+  werden in den gecachten Kontext geladen und haben Vorrang vor
+  `[WEB]`/`[MOD]`. Nachladen ohne Neustart: `POST /reload`.
 - **Live-Websuche `[WEB]`** – server-seitiger `web_search`-Tool, technisch
   **auf Schweizer Domains beschränkt** (admin.ch, fedlex, bger.ch,
   lexfind.ch, swisslex.ch, SIA, KBOB, VSS …). Verhindert DE/AT/EU-Quellen.

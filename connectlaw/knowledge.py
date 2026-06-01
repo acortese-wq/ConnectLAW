@@ -1,16 +1,22 @@
 """Laden von System-Prompt und [DOK]-Wissensquellen.
 
-Textbasierte Wissensdokumente (.md/.txt) werden in den (gecachten)
-System-Kontext eingebettet und erhalten damit gemäss System-Prompt
-Ziff. 2 Vorrang ([DOK] vor [WEB] vor [MOD]).
+Textbasierte Wissensdokumente (.md/.txt) sowie PDFs werden in den
+(gecachten) System-Kontext eingebettet und erhalten damit gemäss
+System-Prompt Ziff. 2 Vorrang ([DOK] vor [WEB] vor [MOD]).
+
+PDF-Text wird über pypdf extrahiert. Ist pypdf nicht installiert,
+werden PDFs übersprungen (statt das Laden abzubrechen).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-# Als Wissensquelle eingelesene Dateiendungen.
+# Direkt einlesbare Textendungen.
 TEXT_EXTENSIONS = {".md", ".txt", ".markdown", ".rst"}
+# Über Extraktion einlesbare Endungen.
+PDF_EXTENSIONS = {".pdf"}
+SUPPORTED_EXTENSIONS = TEXT_EXTENSIONS | PDF_EXTENSIONS
 
 
 def load_system_prompt(path: Path) -> str:
@@ -23,11 +29,40 @@ def load_system_prompt(path: Path) -> str:
     return path.read_text(encoding="utf-8").strip()
 
 
+def _extract_pdf_text(path: Path) -> str:
+    """Extrahiert den Text eines PDF. Leere Zeichenkette bei Fehlern/fehlendem pypdf."""
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        # pypdf nicht installiert – PDF wird übersprungen.
+        return ""
+    try:
+        reader = PdfReader(str(path))
+        parts = [(page.extract_text() or "") for page in reader.pages]
+        return "\n".join(parts).strip()
+    except Exception:
+        # Beschädigte/verschlüsselte PDFs nicht fatal behandeln.
+        return ""
+
+
+def _read_document(path: Path) -> str:
+    """Liest ein einzelnes Wissensdokument als Text (je nach Endung)."""
+    suffix = path.suffix.lower()
+    if suffix in TEXT_EXTENSIONS:
+        try:
+            return path.read_text(encoding="utf-8").strip()
+        except UnicodeDecodeError:
+            return ""
+    if suffix in PDF_EXTENSIONS:
+        return _extract_pdf_text(path)
+    return ""
+
+
 def load_knowledge(knowledge_dir: Path) -> tuple[str, list[str]]:
-    """Lädt alle textbasierten Wissensdokumente aus dem Verzeichnis.
+    """Lädt alle Wissensdokumente (Text + PDF) aus dem Verzeichnis.
 
     Rückgabe: (zusammengesetzter Kontext-Text, Liste der Dateinamen).
-    Gibt ("", []) zurück, wenn keine Dokumente vorhanden sind.
+    Gibt ("", []) zurück, wenn keine verwertbaren Dokumente vorhanden sind.
     """
     if not knowledge_dir.is_dir():
         return "", []
@@ -36,7 +71,7 @@ def load_knowledge(knowledge_dir: Path) -> tuple[str, list[str]]:
         p
         for p in knowledge_dir.iterdir()
         if p.is_file()
-        and p.suffix.lower() in TEXT_EXTENSIONS
+        and p.suffix.lower() in SUPPORTED_EXTENSIONS
         and p.name.lower() != "readme.md"
     )
     if not files:
@@ -52,12 +87,10 @@ def load_knowledge(knowledge_dir: Path) -> tuple[str, list[str]]:
     ]
     loaded: list[str] = []
     for f in files:
-        try:
-            content = f.read_text(encoding="utf-8").strip()
-        except UnicodeDecodeError:
-            # Nicht-UTF-8-Dateien überspringen statt zu raten.
-            continue
+        content = _read_document(f)
         if not content:
+            # Leere/nicht extrahierbare Datei (z.B. Scan-PDF ohne Textebene)
+            # überspringen, statt Platzhalter zu erfinden.
             continue
         sections.append(f"\n----- [DOK] BEGINN: {f.name} -----\n")
         sections.append(content)
