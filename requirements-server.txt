@@ -5,3 +5,5 @@ fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
 # PDF-Textextraktion für [DOK]-Wissensquellen
 pypdf>=4.0.0
+# HTML-Textextraktion für ingest_url.py (Webseite → [DOK])
+beautifulsoup4>=4.12.0

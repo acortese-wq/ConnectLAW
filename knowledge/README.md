@@ -16,6 +16,19 @@ System-Prompt Vorrang vor Live-Recherche `[WEB]` und Modellwissen `[MOD]`.
 - Nach dem Ablegen/Ändern von Dateien das Backend neu starten **oder**
   `curl -X POST http://localhost:8000/reload` aufrufen.
 
+## Webseite als [DOK] einlesen
+
+Eine öffentliche CH-Rechtsquelle einmalig abrufen und hier ablegen:
+
+```bash
+python ingest_url.py "https://www.fedlex.admin.ch/eli/cc/..." --title "OR ..."
+curl -X POST http://localhost:8000/reload     # Backend übernimmt die Quelle
+```
+
+Speichert Text als `.md` (mit Quell-URL + Abrufdatum im Kopf) bzw. PDFs als
+`.pdf`. Lädt nur die eine angegebene URL (kein Crawling). Benötigt
+`beautifulsoup4` (in `requirements-server.txt`).
+
 ## Beispiel
 
 ```
