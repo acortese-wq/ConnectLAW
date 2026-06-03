@@ -23,6 +23,11 @@ PROMPTS_DIR = ROOT_DIR / "prompts"
 KNOWLEDGE_DIR = ROOT_DIR / "knowledge"
 SYSTEM_PROMPT_PATH = PROMPTS_DIR / "system_prompt.md"
 
+# Vertrags-Modus (Entschädigung/Dienstbarkeit Leitungsbau): Workflow-Prompt
+# + Mustervorlage. Werden beim CLI-Befehl /vertrag geladen.
+VERTRAG_PROMPT_PATH = PROMPTS_DIR / "vertrag_prompt.md"
+VORLAGE_PATH = ROOT_DIR / "vorlagen" / "entschaedigungsvertrag_muster.md"
+
 # Zulässige Schweizer Quell-Domains (vgl. System-Prompt Ziff. 4).
 # Begrenzt die Live-Websuche technisch auf CH-Quellen und verhindert
 # die Verwendung deutscher/österreichischer/EU-Quellen als Primärquelle.

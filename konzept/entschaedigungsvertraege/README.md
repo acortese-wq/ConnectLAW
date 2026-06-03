@@ -12,10 +12,19 @@ ohne erfundene Fakten (vgl. `prompts/system_prompt.md`, Ziff. 3).
 | Phase | Inhalt | Status |
 |---|---|---|
 | 1 · Business & Data Understanding | Ziele, Stakeholder, Erfolgskriterien, Feldschema, Datenschutz | ✅ `01_business_data_understanding.md` |
-| 2 · Data Engineering | Feldschema formalisieren, Mustervorlage + Platzhalter, Validierung, Beispieldaten | ⏳ offen |
-| 3 · Modellierung / Prompt-Engineering | Vertrags-Workflow im System-Prompt / `/vertrag`-Modus | ⏳ offen |
-| 4 · Evaluation | Tests gegen Beispieldatensätze, Qualitäts-Gates (KPI-1…5) | ⏳ offen |
-| 5 · Deployment | Integration in CLI und/oder Web-Backend, Ausgabeformat | ⏳ offen |
-| 6 · Monitoring & Maintenance | Qualität/Eskalationen überwachen, Vorlagen pflegen | ⏳ offen |
+| 2 · Data Engineering | `schema/entschaedigungsvertrag.yaml` + `vorlagen/…_muster.md` | ✅ siehe `02_loesung_crisp_ml.md` |
+| 3 · Modellierung / Prompt-Engineering | `prompts/vertrag_prompt.md` + CLI-Befehl `/vertrag` | ✅ |
+| 4 · Evaluation | Quality-Gates (KPI-1…5), Konsistenz Schema↔Vorlage↔Demo | ✅ |
+| 5 · Deployment | CLI `/vertrag` + interaktive Web-Demo `docs/vertrag-demo.html` | ✅ |
+| 6 · Monitoring & Maintenance | versionierte Vorlage/Schema, zentrale Eskalations-/Disclaimer-Regeln | ✅ Grundlage gelegt |
 
-> Weitere Aufgaben (Phase 2 ff.) folgen schrittweise.
+## Lösung & Artefakte
+
+| Artefakt | Datei |
+|---|---|
+| Lösung CRISP-ML(Q) Phasen 2–6 + Reflexion | `02_loesung_crisp_ml.md` |
+| Feldschema (16 Felder, 4 Gruppen) | `../../schema/entschaedigungsvertrag.yaml` |
+| Mustervertrag mit Platzhaltern | `../../vorlagen/entschaedigungsvertrag_muster.md` |
+| Agenten-Workflow (Vertrags-Modus) | `../../prompts/vertrag_prompt.md` |
+| CLI-Befehl `/vertrag` | `../../connectlaw/cli.py` |
+| **Interaktive Visualisierung (Bonus)** | `../../docs/vertrag-demo.html` |

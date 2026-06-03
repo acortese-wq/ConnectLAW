@@ -11,6 +11,8 @@ from .config import (
     KNOWLEDGE_DIR,
     SWISS_SEARCH_DOMAINS,
     SYSTEM_PROMPT_PATH,
+    VERTRAG_PROMPT_PATH,
+    VORLAGE_PATH,
 )
 from .knowledge import load_knowledge, load_system_prompt
 
@@ -25,12 +27,31 @@ BANNER = r"""
 HELP_TEXT = """
 Befehle:
   /help     diese Hilfe anzeigen
+  /vertrag  geführter Entwurf eines Entschädigungs-/Dienstbarkeitsvertrags
   /reset    Gesprächsverlauf löschen (System-Prompt & [DOK] bleiben)
   /exit     beenden  (auch: /quit, Strg+D)
 
 Eingabe einer Frage = juristische Analyse. Mehrzeilig: einfach tippen
 und mit Enter senden. Antwortsprache folgt der Frage (DE/FR/IT/EN/RM).
 """
+
+
+def _build_vertrag_kickoff() -> str | None:
+    """Lädt Vertrags-Workflow-Prompt + Mustervorlage als Kickoff-Nachricht.
+
+    Gibt None zurück, wenn eine der Dateien fehlt. Die Nachricht startet im
+    Agenten den geführten Erfassungs-/Generierungs-Ablauf (CRISP-ML(Q)-Lösung).
+    """
+    if not VERTRAG_PROMPT_PATH.is_file() or not VORLAGE_PATH.is_file():
+        return None
+    workflow = VERTRAG_PROMPT_PATH.read_text(encoding="utf-8").strip()
+    vorlage = VORLAGE_PATH.read_text(encoding="utf-8").strip()
+    return (
+        f"{workflow}\n\n{vorlage}\n\n"
+        "══════════════════════════════════════\n"
+        "Starte jetzt mit Schritt 1 (Erfassung), Gruppe (a) Parteien. "
+        "Stelle nur die kompakte Sammelfrage für diese Gruppe."
+    )
 
 
 def _print_text(text: str) -> None:
@@ -96,6 +117,27 @@ def run() -> int:
         if command == "/reset":
             agent.reset()
             print("Verlauf gelöscht.")
+            continue
+        if command == "/vertrag":
+            kickoff = _build_vertrag_kickoff()
+            if kickoff is None:
+                print(
+                    "Vertrags-Modus nicht verfügbar: prompts/vertrag_prompt.md "
+                    "oder vorlagen/entschaedigungsvertrag_muster.md fehlt.",
+                    file=sys.stderr,
+                )
+                continue
+            agent.reset()
+            print(
+                "Vertrags-Modus gestartet (Entschädigung/Dienstbarkeit). "
+                "Antworte auf die Rückfragen; /reset beendet den Modus.\n"
+            )
+            print("\033[1mConnectLAW›\033[0m ", end="", flush=True)
+            try:
+                agent.ask(kickoff, on_text=_print_text)
+                print()
+            except Exception as exc:  # robuste CLI
+                print(f"\n[Fehler im Vertrags-Modus: {exc}]", file=sys.stderr)
             continue
 
         print("\n\033[1mConnectLAW›\033[0m ", end="", flush=True)

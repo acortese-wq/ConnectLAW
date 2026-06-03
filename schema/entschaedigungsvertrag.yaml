@@ -1,0 +1,126 @@
+# Feldschema: Entschädigungs-/Dienstbarkeitsvertrag Leitungsbau
+# CRISP-ML(Q) Phase 2 (Data Engineering). Formalisiert die "jedes Mal
+# anderen" Vertragsinhalte als stabiles Schema mit variablen Werten.
+#
+# Platzhalter-Konvention: {{feld}} bzw. {{gruppe.feld}} in der Vorlage
+# (vorlagen/entschaedigungsvertrag_muster.md). Pflichtfelder müssen vor
+# der finalen Generierung gefüllt sein (Quality-Gate KPI-2).
+#
+# datenschutz: gering | mittel | hoch  (hoch = Personendaten i.S.d. DSG)
+
+version: "1.0"
+
+felder:
+  # ---- a) Parteien ----------------------------------------------------
+  - key: werkeigentuemer.name
+    label: "Werkeigentümer (Leitungsbetreiber)"
+    typ: text
+    pflicht: true
+    datenschutz: gering
+
+  - key: grundeigentuemer.name
+    label: "Grundeigentümer:in"
+    typ: text
+    pflicht: true
+    datenschutz: hoch
+
+  - key: grundeigentuemer.adresse
+    label: "Adresse Grundeigentümer:in"
+    typ: text
+    pflicht: true
+    datenschutz: hoch
+
+  - key: grundeigentuemer.rechtsform
+    label: "Rechtsform"
+    typ: enum
+    optionen: [natuerliche_person, juristische_person, erbengemeinschaft, miteigentum]
+    pflicht: true
+    datenschutz: gering
+
+  # ---- b) Grundstück / Parzelle --------------------------------------
+  - key: grundstueck.parzellennummer
+    label: "Parzellen-/Grundstücknummer"
+    typ: text
+    pflicht: true
+    datenschutz: mittel
+
+  - key: grundstueck.grundbuch
+    label: "Grundbuchkreis"
+    typ: text
+    pflicht: true
+    datenschutz: mittel
+
+  - key: grundstueck.gemeinde
+    label: "Gemeinde"
+    typ: text
+    pflicht: true
+    datenschutz: gering
+
+  - key: grundstueck.kanton
+    label: "Kanton (steuert Recht & Sprache)"
+    typ: enum
+    optionen: [AG, AI, AR, BE, BL, BS, FR, GE, GL, GR, JU, LU, NE, NW, OW, SG, SH, SO, SZ, TG, TI, UR, VD, VS, ZG, ZH]
+    pflicht: true
+    datenschutz: gering
+
+  - key: grundstueck.flaeche_beanspruchung_m2
+    label: "Beanspruchte Fläche (m²)"
+    typ: zahl
+    pflicht: true
+    datenschutz: gering
+
+  # ---- c) Leitung / Werk ---------------------------------------------
+  - key: leitung.typ
+    label: "Leitungstyp"
+    typ: enum
+    optionen: [strom, gas, wasser, abwasser, telekom, fernwaerme]
+    pflicht: true
+    datenschutz: gering
+
+  - key: leitung.verlauf_beschrieb
+    label: "Verlauf / Trassee / Tiefe / Schutzstreifen"
+    typ: text
+    pflicht: true
+    datenschutz: gering
+
+  - key: leitung.dauerhaft_temporaer
+    label: "Dauerhaft oder temporär"
+    typ: enum
+    optionen: [dauerhaft, temporaer]
+    pflicht: true
+    datenschutz: gering
+
+  # ---- d) Dienstbarkeit & Entschädigung ------------------------------
+  - key: dienstbarkeit.art
+    label: "Dienstbarkeitsart"
+    typ: enum
+    optionen: [grunddienstbarkeit_leitungsrecht, personaldienstbarkeit]
+    pflicht: true
+    datenschutz: gering
+
+  - key: entschaedigung.betrag_chf
+    label: "Entschädigung (CHF)"
+    typ: zahl
+    pflicht: true
+    datenschutz: mittel
+    # Quality-Gate KPI-4: ab dieser Schwelle Eskalation an Rechtsdienst.
+    eskalation_ab: 100000
+
+  - key: entschaedigung.grundlage
+    label: "Grundlage der Entschädigung (Tarif/Reglement/Verhandlung)"
+    typ: text
+    pflicht: true
+    datenschutz: gering
+    hinweis: "Quelle nennen – Ansätze nie aus Modellwissen erfinden ([WEB]/Reglement)."
+
+  - key: entschaedigung.zahlungsmodalitaet
+    label: "Zahlungsmodalität"
+    typ: text
+    pflicht: true
+    datenschutz: gering
+
+  - key: entschaedigung.eintrag_grundbuch
+    label: "Grundbucheintrag der Dienstbarkeit"
+    typ: bool
+    pflicht: true
+    datenschutz: gering

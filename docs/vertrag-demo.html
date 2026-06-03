@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ConnectLAW · Vertrags-Generator (interaktive Demo)</title>
+<meta name="description" content="Interaktive Visualisierung: Entschädigungs-/Dienstbarkeitsvertrag Leitungsbau aus Feldschema + Vorlage. CRISP-ML(Q)-Lösung, läuft vollständig im Browser." />
+<style>
+  :root{
+    --bg:#0f1620; --panel:#16202c; --panel-2:#1d2a38; --border:#2a3a4d;
+    --text:#e6edf3; --muted:#93a1b0; --accent:#c4603d; --accent-2:#2f6f8f;
+    --warn:#f0b429; --danger:#e5534b; --ok:#3fb950; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5}
+  a{color:var(--accent)}
+  header{display:flex;align-items:center;gap:.8rem;padding:.9rem 1.2rem;
+    border-bottom:1px solid var(--border);background:var(--panel);flex-wrap:wrap}
+  .mark{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;
+    background:var(--accent);color:#fff;font-weight:700;font-size:1.2rem}
+  header h1{font-size:1.05rem;margin:0}
+  header p{margin:0;color:var(--muted);font-size:.82rem}
+  .badge{margin-left:auto;font-size:.72rem;color:var(--ok);border:1px solid var(--border);
+    padding:.25rem .6rem;border-radius:999px;background:var(--panel-2)}
+  main{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:0;height:calc(100vh - 64px)}
+  @media(max-width:880px){main{grid-template-columns:1fr;height:auto}}
+  .form,.preview{overflow:auto;padding:1.1rem 1.2rem}
+  .form{border-right:1px solid var(--border);background:var(--panel)}
+  fieldset{border:1px solid var(--border);border-radius:var(--radius);margin:0 0 1rem;padding:.8rem .9rem}
+  legend{padding:0 .4rem;color:var(--accent);font-weight:600;font-size:.9rem}
+  label{display:block;margin:.55rem 0 .15rem;font-size:.82rem;color:var(--muted)}
+  label .pii{color:var(--warn);font-size:.7rem}
+  input,select,textarea{width:100%;background:var(--panel-2);color:var(--text);
+    border:1px solid var(--border);border-radius:8px;padding:.45rem .55rem;font:inherit}
+  textarea{min-height:54px;resize:vertical}
+  .row{display:flex;gap:.6rem;align-items:center}
+  .row input[type=checkbox]{width:auto}
+  .toolbar{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+  button{cursor:pointer;border:1px solid var(--border);background:var(--panel-2);color:var(--text);
+    border-radius:8px;padding:.5rem .8rem;font:inherit}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button:hover{filter:brightness(1.1)}
+  .progress-wrap{margin:.2rem 0 1rem}
+  .progress{height:8px;background:var(--panel-2);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+  .progress > i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}
+  .meter-label{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:.3rem}
+  .alert{border-radius:8px;padding:.55rem .7rem;font-size:.83rem;margin-bottom:.7rem;display:none}
+  .alert.show{display:block}
+  .alert.warn{background:rgba(240,180,41,.12);border:1px solid var(--warn);color:#f7d98a}
+  .alert.info{background:rgba(47,111,143,.12);border:1px solid var(--accent-2);color:#bcd8e6}
+  .preview{background:#fbf9f4;color:#1b1b1b;font-family:Georgia,"Times New Roman",serif}
+  .doc{max-width:720px;margin:0 auto}
+  .doc h2{font-size:1.35rem;border-bottom:2px solid #c4603d;padding-bottom:.3rem}
+  .doc h3{font-size:1.05rem;margin-top:1.3rem}
+  .doc table{border-collapse:collapse;width:100%;margin:.6rem 0;font-size:.92rem}
+  .doc td,.doc th{border:1px solid #d9d2c4;padding:.35rem .55rem;text-align:left}
+  .doc blockquote{border-left:3px solid #c4603d;margin:.6rem 0;padding:.3rem .8rem;
+    background:#f3eee2;color:#5a4632;font-size:.86rem}
+  .doc hr{border:none;border-top:1px solid #d9d2c4;margin:1rem 0}
+  .ph{background:#ffe1d6;color:#9b3517;border-radius:4px;padding:0 .2rem;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <div class="mark">§</div>
+  <div>
+    <h1>ConnectLAW · Vertrags-Generator</h1>
+    <p>Entschädigung / Dienstbarkeit Leitungsbau · interaktive CRISP-ML(Q)-Demo</p>
+  </div>
+  <span class="badge">🔒 Läuft lokal im Browser – keine Daten werden gesendet</span>
+</header>
+
+<main>
+  <section class="form">
+    <div class="toolbar">
+      <button class="primary" id="btn-example">Beispieldaten laden</button>
+      <button id="btn-reset">Zurücksetzen</button>
+      <button id="btn-copy">Entwurf kopieren</button>
+      <button id="btn-download">.md herunterladen</button>
+    </div>
+
+    <div class="meter-label"><span>Pflichtfelder ausgefüllt</span><span id="meter-text">0 / 0</span></div>
+    <div class="progress-wrap"><div class="progress"><i id="meter-bar"></i></div></div>
+
+    <div class="alert warn" id="alert-escalation">⚠ Risikohinweis: Entschädigung ≥ CHF 100'000 → Rechtsdienst beiziehen.</div>
+    <div class="alert info" id="alert-lang">ℹ Mehrsprachiger Kanton – rechtsverbindliche Originalsprache beachten.</div>
+
+    <form id="form"><!-- felder werden generiert --></form>
+  </section>
+
+  <section class="preview">
+    <div class="doc" id="doc">Vertragsentwurf erscheint hier …</div>
+  </section>
+</main>
+
+<script>
+// ── Feldschema (Spiegel von schema/entschaedigungsvertrag.yaml) ───────────
+const SCHEMA = [
+  {g:"a) Parteien", fields:[
+    {k:"werkeigentuemer.name", l:"Werkeigentümer (Leitungsbetreiber)", t:"text", req:true},
+    {k:"grundeigentuemer.name", l:"Grundeigentümer:in", t:"text", req:true, pii:true},
+    {k:"grundeigentuemer.adresse", l:"Adresse Grundeigentümer:in", t:"text", req:true, pii:true},
+    {k:"grundeigentuemer.rechtsform", l:"Rechtsform", t:"enum", req:true,
+      o:["natürliche Person","juristische Person","Erbengemeinschaft","Miteigentum"]},
+  ]},
+  {g:"b) Grundstück / Parzelle", fields:[
+    {k:"grundstueck.parzellennummer", l:"Parzellen-/Grundstücknummer", t:"text", req:true},
+    {k:"grundstueck.grundbuch", l:"Grundbuchkreis", t:"text", req:true},
+    {k:"grundstueck.gemeinde", l:"Gemeinde", t:"text", req:true},
+    {k:"grundstueck.kanton", l:"Kanton", t:"enum", req:true,
+      o:["AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH"]},
+    {k:"grundstueck.flaeche_beanspruchung_m2", l:"Beanspruchte Fläche (m²)", t:"number", req:true},
+  ]},
+  {g:"c) Leitung / Werk", fields:[
+    {k:"leitung.typ", l:"Leitungstyp", t:"enum", req:true,
+      o:["Strom","Gas","Wasser","Abwasser","Telekom","Fernwärme"]},
+    {k:"leitung.verlauf_beschrieb", l:"Verlauf / Trassee / Tiefe", t:"textarea", req:true},
+    {k:"leitung.dauerhaft_temporaer", l:"Beanspruchung", t:"enum", req:true, o:["dauerhaft","temporär"]},
+  ]},
+  {g:"d) Dienstbarkeit & Entschädigung", fields:[
+    {k:"dienstbarkeit.art", l:"Dienstbarkeitsart", t:"enum", req:true,
+      o:["Grunddienstbarkeit (Leitungsrecht)","Personaldienstbarkeit"]},
+    {k:"entschaedigung.betrag_chf", l:"Entschädigung (CHF)", t:"number", req:true},
+    {k:"entschaedigung.grundlage", l:"Grundlage (Tarif/Reglement/Verhandlung)", t:"text", req:true},
+    {k:"entschaedigung.zahlungsmodalitaet", l:"Zahlungsmodalität", t:"text", req:true},
+    {k:"entschaedigung.eintrag_grundbuch", l:"Grundbucheintrag der Dienstbarkeit", t:"bool", req:true},
+  ]},
+];
+
+// ── Vorlage (Spiegel von vorlagen/entschaedigungsvertrag_muster.md) ───────
+const TEMPLATE = `## Dienstbarkeits- und Entschädigungsvertrag
+
+**zwischen**
+
+**{{werkeigentuemer.name}}** — nachfolgend «Werkeigentümerin» —
+
+**und**
+
+**{{grundeigentuemer.name}}**, {{grundeigentuemer.adresse}}
+Rechtsform: {{grundeigentuemer.rechtsform}} — nachfolgend «Grundeigentümer:in» —
+
+---
+
+### 1. Vertragsgegenstand
+
+Die Grundeigentümer:in räumt der Werkeigentümerin auf dem nachstehenden Grundstück das Recht ein, eine **{{leitung.typ}}-Leitung** zu erstellen, zu betreiben, zu unterhalten und zu erneuern.
+
+| Position | Angabe |
+| Grundstück (Parzelle) | {{grundstueck.parzellennummer}} |
+| Grundbuchkreis | {{grundstueck.grundbuch}} |
+| Gemeinde / Kanton | {{grundstueck.gemeinde}} / {{grundstueck.kanton}} |
+| Beanspruchte Fläche | {{grundstueck.flaeche_beanspruchung_m2}} m² |
+| Verlauf / Trassee | {{leitung.verlauf_beschrieb}} |
+| Art der Beanspruchung | {{leitung.dauerhaft_temporaer}} |
+
+### 2. Dienstbarkeit
+
+Als Rechtsgrundlage wird eine **{{dienstbarkeit.art}}** vereinbart. Grundbucheintrag: **{{entschaedigung.eintrag_grundbuch}}**.
+
+> Rechtsnatur und einschlägige ZGB-Bestimmungen durch den Rechtsdienst zu verifizieren — keine Artikelnummer aus Modellwissen.
+
+### 3. Entschädigung
+
+Die Werkeigentümerin entrichtet eine Entschädigung von **CHF {{entschaedigung.betrag_chf}}**.
+
+| Position | Angabe |
+| Grundlage | {{entschaedigung.grundlage}} |
+| Zahlungsmodalität | {{entschaedigung.zahlungsmodalitaet}} |
+
+Die Zahlung erfolgt **ohne Anerkennung einer Rechtspflicht**, soweit nicht anders vereinbart.
+
+### 4. Dauer
+
+Die Dienstbarkeit wird **{{leitung.dauerhaft_temporaer}}** eingeräumt.
+
+---
+
+> ⚠ Risikohinweis prüfen: ab Entschädigung ≥ CHF 100'000, drohender Verjährung/Verfügung, Personenschäden oder strittiger Vertragslage Rechtsdienst beiziehen.
+>
+> KI-gestützte Erstorientierung, ersetzt keine verbindliche Rechtsberatung.`;
+
+// ── Beispieldaten (fiktiv, anonymisiert) ──────────────────────────────────
+const EXAMPLE = {
+  "werkeigentuemer.name":"Energienetz Musterstadt AG",
+  "grundeigentuemer.name":"Hans Muster (fiktiv)",
+  "grundeigentuemer.adresse":"Beispielweg 1, 7000 Musterhausen",
+  "grundeigentuemer.rechtsform":"natürliche Person",
+  "grundstueck.parzellennummer":"1234",
+  "grundstueck.grundbuch":"Musterhausen",
+  "grundstueck.gemeinde":"Musterhausen",
+  "grundstueck.kanton":"GR",
+  "grundstueck.flaeche_beanspruchung_m2":"45",
+  "leitung.typ":"Strom",
+  "leitung.verlauf_beschrieb":"Erdkabel, Trassee Ost-West, Tiefe ca. 1.2 m",
+  "leitung.dauerhaft_temporaer":"dauerhaft",
+  "dienstbarkeit.art":"Grunddienstbarkeit (Leitungsrecht)",
+  "entschaedigung.betrag_chf":"2500",
+  "entschaedigung.grundlage":"Verhandlung; Tarif zu verifizieren",
+  "entschaedigung.zahlungsmodalitaet":"einmalig, ohne Anerkennung einer Rechtspflicht",
+  "entschaedigung.eintrag_grundbuch":"ja",
+};
+
+const MULTILANG = new Set(["GR","BE","FR","VS"]);
+const ALL = SCHEMA.flatMap(s=>s.fields);
+const state = {};
+
+// ── Formular aufbauen ─────────────────────────────────────────────────────
+const form = document.getElementById("form");
+for(const grp of SCHEMA){
+  const fs=document.createElement("fieldset");
+  fs.innerHTML=`<legend>${grp.g}</legend>`;
+  for(const f of grp.fields){
+    const id="f_"+f.k;
+    const lab=document.createElement("label");
+    lab.setAttribute("for",id);
+    lab.innerHTML=f.l+(f.req?' *':'')+(f.pii?' <span class="pii">● Personendaten</span>':'');
+    fs.appendChild(lab);
+    let el;
+    if(f.t==="enum"){
+      el=document.createElement("select");
+      el.innerHTML='<option value="">– bitte wählen –</option>'+f.o.map(o=>`<option>${o}</option>`).join("");
+    }else if(f.t==="textarea"){
+      el=document.createElement("textarea");
+    }else if(f.t==="bool"){
+      el=document.createElement("select");
+      el.innerHTML='<option value="">–</option><option value="ja">ja</option><option value="nein">nein</option>';
+    }else{
+      el=document.createElement("input");
+      el.type=f.t==="number"?"number":"text";
+    }
+    el.id=id; el.dataset.key=f.k;
+    el.addEventListener("input",e=>{state[f.k]=e.target.value;render();});
+    fs.appendChild(el);
+  }
+  form.appendChild(fs);
+}
+
+// ── Minimaler Markdown→HTML-Renderer (Überschriften, Bold, Tabellen, …) ───
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function inline(s){return esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>")
+  .replace(/«(.+?)»/g,"«$1»")
+  .replace(/{{([a-z_.]+)}}/g,'<span class="ph">⟨$1⟩</span>');}
+function mdToHtml(md){
+  const lines=md.split("\n"); let html=""; let tbl=[];
+  const flush=()=>{ if(!tbl.length)return;
+    html+="<table>"+tbl.map((r,i)=>{const c=r.split("|").slice(1,-1).map(x=>x.trim());
+      const tag=i===0?"th":"td";return "<tr>"+c.map(x=>`<${tag}>${inline(x)}</${tag}>`).join("")+"</tr>";}).join("")+"</table>"; tbl=[]; };
+  for(let ln of lines){
+    if(/^\s*\|.*\|\s*$/.test(ln)){tbl.push(ln.trim());continue;}
+    flush();
+    if(/^### /.test(ln))html+="<h3>"+inline(ln.slice(4))+"</h3>";
+    else if(/^## /.test(ln))html+="<h2>"+inline(ln.slice(3))+"</h2>";
+    else if(/^---\s*$/.test(ln))html+="<hr>";
+    else if(/^> /.test(ln))html+="<blockquote>"+inline(ln.slice(2))+"</blockquote>";
+    else if(/^>\s*$/.test(ln))html+="";
+    else if(ln.trim()==="")html+="";
+    else html+="<p>"+inline(ln)+"</p>";
+  }
+  flush(); return html;
+}
+
+// ── Render + Validierung ──────────────────────────────────────────────────
+function filled(md){return md.replace(/{{([a-z_.]+)}}/g,(m,k)=>{
+  const v=(state[k]||"").toString().trim(); return v? v : m;});}
+
+function render(){
+  const md=filled(TEMPLATE);
+  document.getElementById("doc").innerHTML=mdToHtml(md);
+  // Fortschritt Pflichtfelder
+  const reqs=ALL.filter(f=>f.req);
+  const done=reqs.filter(f=>(state[f.k]||"").toString().trim()!=="").length;
+  document.getElementById("meter-text").textContent=`${done} / ${reqs.length}`;
+  document.getElementById("meter-bar").style.width=(100*done/reqs.length)+"%";
+  // Eskalation
+  const betrag=parseFloat(state["entschaedigung.betrag_chf"]||"");
+  document.getElementById("alert-escalation").classList.toggle("show", betrag>=100000);
+  // Mehrsprachiger Kanton
+  document.getElementById("alert-lang").classList.toggle("show", MULTILANG.has(state["grundstueck.kanton"]));
+}
+
+function setAll(data){
+  for(const f of ALL){
+    const el=document.getElementById("f_"+f.k);
+    const v=data?data[f.k]||"":"";
+    state[f.k]=v; if(el)el.value=v;
+  }
+  render();
+}
+
+document.getElementById("btn-example").onclick=()=>setAll(EXAMPLE);
+document.getElementById("btn-reset").onclick=()=>setAll(null);
+document.getElementById("btn-copy").onclick=()=>{
+  navigator.clipboard.writeText(filled(TEMPLATE)).then(()=>{
+    const b=document.getElementById("btn-copy");b.textContent="kopiert ✓";setTimeout(()=>b.textContent="Entwurf kopieren",1500);});
+};
+document.getElementById("btn-download").onclick=()=>{
+  const blob=new Blob([filled(TEMPLATE)],{type:"text/markdown"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="entschaedigungsvertrag_entwurf.md";a.click();
+};
+
+render();
+</script>
+</body>
+</html>
