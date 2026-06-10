@@ -1,0 +1,169 @@
+{
+  "name": "Trennungs-/Scheidungs-Info-Generator (Option A, verbessert)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "scheidungs-info",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook (Frontend)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 320],
+      "webhookId": "scheidungs-info-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "f1", "name": "trennungsform", "value": "={{ ($json.body.trennungsform ?? '').toString().trim() }}", "type": "string" },
+            { "id": "f2", "name": "verheiratet", "value": "={{ ($json.body.verheiratet ?? '').toString().trim() }}", "type": "string" },
+            { "id": "f3", "name": "kinder", "value": "={{ ($json.body.kinder ?? '').toString().trim() }}", "type": "string" },
+            { "id": "f4", "name": "gueterstand", "value": "={{ ($json.body.gueterstand ?? '').toString().trim() }}", "type": "string" },
+            { "id": "f5", "name": "wohnsituation", "value": "={{ ($json.body.wohnsituation ?? '').toString().trim() }}", "type": "string" },
+            { "id": "f6", "name": "ehevertrag_vorhanden", "value": "={{ ($json.body.ehevertrag_vorhanden ?? '').toString().trim() }}", "type": "string" },
+            { "id": "f7", "name": "pensionskasse_thema", "value": "={{ ($json.body.pensionskasse_thema ?? '').toString().trim() }}", "type": "string" },
+            { "id": "f8", "name": "freitext_anliegen", "value": "={{ ($json.body.freitext_anliegen ?? '').toString().trim().slice(0, 2000) }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-set-collect",
+      "name": "Felder strukturieren",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"model\": \"gpt-4o-mini\", \"temperature\": 0, \"max_tokens\": 1200, \"response_format\": { \"type\": \"json_object\" }, \"messages\": [ { \"role\": \"system\", \"content\": \"SYSTEM-PROMPT HIER EINFUEGEN (siehe Datei systemprompt_scheidungs_info_generator.md). Antworte ausschliesslich mit JSON nach dem Ausgabe-Schema.\" }, { \"role\": \"user\", \"content\": {{ JSON.stringify(JSON.stringify($json)) }} } ] }",
+        "options": { "timeout": 30000 }
+      },
+      "id": "node-openai",
+      "name": "OpenAI (HTTP Request)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 320],
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json || {};\nconst fallback = (grund) => ({ eskalation: true, eskalation_grund: grund, relevante_bausteine: [], offene_punkte: [], erkannte_situation: {} });\n\n// API-Fehler (z. B. 4xx/5xx) liefern statt 'choices' ein 'error'-Objekt\nif (item.error || !Array.isArray(item.choices) || !item.choices[0] || !item.choices[0].message) {\n  return [{ json: fallback('KI-Antwort nicht verfuegbar (API-Fehler).') }];\n}\n\nconst content = item.choices[0].message.content || '{}';\nlet data;\ntry {\n  data = JSON.parse(content);\n} catch (e) {\n  return [{ json: fallback('Antwort nicht parsebar.') }];\n}\n\n// Defensive Defaults, damit Folgeknoten nie auf undefined laufen\ndata.eskalation = data.eskalation === true;\ndata.relevante_bausteine = Array.isArray(data.relevante_bausteine) ? data.relevante_bausteine : [];\ndata.offene_punkte = Array.isArray(data.offene_punkte) ? data.offene_punkte : [];\ndata.erkannte_situation = data.erkannte_situation || {};\nreturn [{ json: data }];"
+      },
+      "id": "node-parse",
+      "name": "LLM-Antwort parsen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 320]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            { "id": "c1", "leftValue": "={{ $json.eskalation }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-if",
+      "name": "IF Eskalation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 320]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst katalog = { INFO_ABLAUF_TRENNUNG: 'Ablauf Trennung/Scheidung (Inhalt aus Katalog)', INFO_KINDESUNTERHALT: 'Kindesunterhalt (allgemein)', INFO_NACHEHELICHER_UNTERHALT: 'Nachehelicher Unterhalt (allgemein)', INFO_VORSORGEAUSGLEICH: 'Pensionskasse / Vorsorgeausgleich (allgemein)', INFO_GUETERRECHT_ALLGEMEIN: 'Gueterrecht (allgemein)', INFO_WOHNSITUATION: 'Wohnsituation (allgemein)', INFO_EHEVERTRAG: 'Wirkung eines Ehevertrags (allgemein)', INFO_NAECHSTE_SCHRITTE: 'Checkliste naechste Schritte' };\nconst ids = d.relevante_bausteine || [];\nconst teile = ids.map(function (id) { return katalog[id] || ('[' + id + ']'); });\nconst disclaimer = 'Hinweis: Allgemeine Information, ersetzt keine Rechtsberatung.';\nconst dokument = (['Ihre Auskunft'].concat(teile).concat(['', disclaimer])).join('\\n\\n');\nreturn [{ json: { dokument: dokument, lead: true, eskalation: false, situation: d.erkannte_situation || {} } }];"
+      },
+      "id": "node-build",
+      "name": "Dokument aus Template",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 220]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "v1", "name": "dokument", "value": "Aufgrund Ihrer Angaben empfehlen wir ein persoenliches Beratungsgespraech. Bei akuter Gefaehrdung wenden Sie sich bitte sofort an die zustaendige Notfallstelle (Notruf 112 / Polizei 117).", "type": "string" },
+            { "id": "v2", "name": "lead", "value": "={{ true }}", "type": "boolean" },
+            { "id": "v3", "name": "eskalation", "value": "={{ true }}", "type": "boolean" },
+            { "id": "v4", "name": "eskalation_grund", "value": "={{ $json.eskalation_grund || '' }}", "type": "string" },
+            { "id": "v5", "name": "situation", "value": "={{ $json.erkannte_situation || {} }}", "type": "object" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-verweis",
+      "name": "Verweis-Baustein",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1360, 440]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { dokument: $json.dokument, lead: $json.lead, eskalation: $json.eskalation } }}",
+        "options": {}
+      },
+      "id": "node-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1600, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "kanzlei@example.ch",
+        "subject": "Neuer Lead: Trennungs-/Scheidungs-Info",
+        "emailType": "text",
+        "message": "={{ 'Neuer Lead aus dem Info-Generator.\\nEskalation: ' + ($json.eskalation ? 'JA' : 'nein') + ($json.eskalation_grund ? ' (' + $json.eskalation_grund + ')' : '') + '\\nSituation: ' + JSON.stringify($json.situation || {}) }}",
+        "options": {}
+      },
+      "id": "node-gmail",
+      "name": "Gmail: Lead an Kanzlei",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1600, 480],
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    }
+  ],
+  "connections": {
+    "Webhook (Frontend)": { "main": [ [ { "node": "Felder strukturieren", "type": "main", "index": 0 } ] ] },
+    "Felder strukturieren": { "main": [ [ { "node": "OpenAI (HTTP Request)", "type": "main", "index": 0 } ] ] },
+    "OpenAI (HTTP Request)": { "main": [ [ { "node": "LLM-Antwort parsen", "type": "main", "index": 0 } ] ] },
+    "LLM-Antwort parsen": { "main": [ [ { "node": "IF Eskalation?", "type": "main", "index": 0 } ] ] },
+    "IF Eskalation?": { "main": [
+      [ { "node": "Verweis-Baustein", "type": "main", "index": 0 } ],
+      [ { "node": "Dokument aus Template", "type": "main", "index": 0 } ]
+    ] },
+    "Dokument aus Template": { "main": [ [
+      { "node": "Respond to Webhook", "type": "main", "index": 0 },
+      { "node": "Gmail: Lead an Kanzlei", "type": "main", "index": 0 }
+    ] ] },
+    "Verweis-Baustein": { "main": [ [
+      { "node": "Respond to Webhook", "type": "main", "index": 0 },
+      { "node": "Gmail: Lead an Kanzlei", "type": "main", "index": 0 }
+    ] ] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
