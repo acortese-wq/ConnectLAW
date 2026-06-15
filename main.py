@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Einstiegspunkt für ConnectLAW – juristischer Fach-Chatbot.
+"""Einstiegspunkt für ConnectLAW – juristischer Fach-Chatbot (DAS IST SO!).
 
 Start:  python main.py
 """
